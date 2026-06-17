@@ -20,7 +20,8 @@ def solicitar_dato_obligatorio(mensaje):
         if dato:
             return dato
 
-        print("Dato inválido. Este campo no puede quedar vacío.\n")
+        print("Dato inválido. Este campo no puede quedar vacío.")
+        print("El chatbot solicita nuevamente la información faltante.\n")
 
 
 def validar_url(url):
@@ -35,7 +36,8 @@ def solicitar_url():
         if validar_url(url):
             return url
 
-        print("URL inválida. Ingrese una URL válida, por ejemplo: www.algorize.com\n")
+        print("URL inválida.")
+        print("Ingrese nuevamente una URL válida, por ejemplo: www.algorize.com\n")
 
 
 def seleccionar_servicio():
@@ -58,15 +60,28 @@ def seleccionar_servicio():
         if opcion in servicios:
             return servicios[opcion]
 
-        print("Opción inválida. Debe seleccionar una opción del 1 al 4.\n")
+        print("Opción inválida.")
+        print("Debe seleccionar una opción del 1 al 4.\n")
+
+
+def verificar_datos_completos(nombre, empresa, url, servicio):
+    return all([nombre, empresa, url, servicio])
 
 
 def registrar_solicitud(nombre, empresa, url, servicio, area):
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    with open(ARCHIVO_SOLICITUDES, "a", newline="", encoding="utf-8") as archivo:
-        escritor = csv.writer(archivo)
-        escritor.writerow([fecha, nombre, empresa, url, servicio, area, "Registrada"])
+    try:
+        with open(ARCHIVO_SOLICITUDES, "a", newline="", encoding="utf-8") as archivo:
+            escritor = csv.writer(archivo)
+            escritor.writerow([fecha, nombre, empresa, url, servicio, area, "Registrada"])
+
+        return True
+
+    except Exception as error:
+        print("\nError al registrar la solicitud en la base de datos.")
+        print(f"Detalle técnico: {error}")
+        return False
 
 
 def main():
@@ -86,14 +101,27 @@ def main():
     print("\nEstado actual: CLASIFICANDO_SOLICITUD")
     servicio, area = seleccionar_servicio()
 
+    print("\nEstado actual: VALIDANDO_DATOS_COMPLETOS")
+    if not verificar_datos_completos(nombre, empresa, url, servicio):
+        print("No se pudo continuar porque existen datos incompletos.")
+        print("Estado final: FINALIZADO CON ERROR")
+        return
+
     print("\nEstado actual: REGISTRANDO_SOLICITUD")
-    registrar_solicitud(nombre, empresa, url, servicio, area)
+    registro_exitoso = registrar_solicitud(nombre, empresa, url, servicio, area)
 
-    print("\nSolicitud registrada correctamente.")
-    print(f"Servicio asignado: {servicio}")
-    print(f"Derivación interna: {area}")
-    print("Estado final: FINALIZADO")
-    print("Gracias por contactarse con Algorize.")
-
+    print("\nEstado actual: VERIFICANDO_REGISTRO")
+    if registro_exitoso:
+        print("\nSolicitud registrada correctamente.")
+        print(f"Servicio asignado: {servicio}")
+        print(f"Derivación interna: {area}")
+        print("Estado final: FINALIZADO")
+        print("Gracias por contactarse con Algorize.")
+    else:
+        print("\nNo se pudo registrar la solicitud automáticamente.")
+        print("La consulta será derivada a un consultor para registro manual.")
+        print(f"Servicio solicitado: {servicio}")
+        print(f"Derivación interna: {area}")
+        print("Estado final: FINALIZADO CON DERIVACIÓN MANUAL")
 
 main()
